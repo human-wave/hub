@@ -12,7 +12,7 @@ def build_compile_cmd(params):
         f"-d NPU",
         f"-c /root/configs/{params['config']}",
         "-log_level LOG_TRACE",
-        f"> /root/logs/{params['log_file']}"
+        f"> /root/models/{params['name']}/{params['log_file']}"
     ]
     
     # Conditionally add parameters if they are not empty
@@ -45,8 +45,8 @@ def parse_json(json_path):
     
     for network in config["networks"]:
         compile_cfg = network.get("Compile", {})
-        # 替换路径中的 `..` 为 `/root`
-        model_path = network.get("ir", "").replace("..", "/root")
+        # 替换路径中的 `..` 为 `/root/public_models`
+        model_path = network.get("ir", "").replace("..", "/root/public_models")
         params = {
             "model": model_path,
             "output_blob": f"{network.get('name', 'output')}.blob",
@@ -67,10 +67,10 @@ def parse_json(json_path):
     return cmds
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("用法: python test2.py public_models_5020.json")
-        exit(1)
-    cmds = parse_json(sys.argv[1])
+    # if len(sys.argv) != 2:
+    #     print("用法: python test3.py public_models_5020.json")
+    #     exit(1)
+    cmds = parse_json("public_models_5020.json")
     for cmd in cmds:
         print(cmd)
         print()  # 命令之间空一行
