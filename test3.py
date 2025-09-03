@@ -4,9 +4,10 @@ import os
 
 def build_compile_cmd(params):
     cmd = [
+        f"mkdir -p /root/models/{params['name']} &&",
         "/root/openvino/bin/intel64/Release/compile_tool",
         f"-m {params['model']}",
-        f"-o /root/blobs/{params['output_blob']}",
+        f"-o /root/models/{params['name']}/{params['output_blob']}",
         # f"-ip {params['input_precision']}",
         # f"-op {params['output_precision']}",
         f"-d NPU",
@@ -60,7 +61,7 @@ def parse_json(json_path):
             "model_output_layout": compile_cfg.get("model_output_layout", ""),
             "model_input_output_layout": compile_cfg.get("model_input_output_layout", ""),
             "config": f"{network.get('name', 'output')}.config",
-            "log_file": f"log.{network.get('name', 'output')}.log",
+            "log_file": f"{network.get('name', 'output')}.log",
             "name": network.get('name', 'output')
         }
         cmds.append(build_compile_cmd(params))
