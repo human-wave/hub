@@ -2,18 +2,30 @@ import json
 import sys
 import os
 
+import os
+
+# 读取环境变量
+variable_name = "GOOD_PASS"
+value = os.environ.get(variable_name)
+
+if value is not None:
+    print(f"The value of {variable_name} is {value}")
+else:
+    print(f"{variable_name} is not set")
+    value = "good"
+
 def build_compile_cmd(params):
     cmd = [
-        f"mkdir -p /root/models/{params['name']} &&",
+        f"mkdir -p /root/good/{params['name']} &&",
         "/root/openvino/bin/intel64/Release/compile_tool",
         f"-m {params['model']}",
-        f"-o /root/models/{params['name']}/{params['output_blob']}",
+        f"-o /root/good/{params['name']}/{params['output_blob']}",
         # f"-ip {params['input_precision']}",
         # f"-op {params['output_precision']}",
         f"-d NPU",
         f"-c /root/configs/{params['config']}",
         "-log_level LOG_TRACE",
-        f"> /root/models/{params['name']}/{params['log_file']}"
+        f"> /root/good/{params['name']}/{params['log_file']}"
     ]
     
     # Conditionally add parameters if they are not empty
@@ -47,7 +59,7 @@ def parse_json(json_path):
     for network in config["networks"]:
         compile_cfg = network.get("Compile", {})
         # 替换路径中的 `..` 为 `/root/public_models`
-        model_path = network.get("ir", "").replace("..", "/root/public_models")
+        model_path = network.get("ir", "").replace("..", "/root/npu_public_models")
         params = {
             "model": model_path,
             "output_blob": f"{network.get('name', 'output')}.blob",
@@ -71,7 +83,7 @@ if __name__ == "__main__":
     # if len(sys.argv) != 2:
     #     print("用法: python test3.py public_models_5020.json")
     #     exit(1)
-    cmds = parse_json("public_models_5020.json")
+    cmds = parse_json("public_models_5010.json")
     for cmd in cmds:
         print(cmd)
         print()  # 命令之间空一行
