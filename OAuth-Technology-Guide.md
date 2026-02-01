@@ -377,6 +377,7 @@ const config = {
 // Store state (production should use database or Redis for distributed systems)
 // In-memory storage is only suitable for single-server development environments
 // For production with multiple server instances, use Redis or a distributed cache
+// Note: Implement state expiration/cleanup to prevent memory leaks
 const stateStore = new Map();
 
 // Step 1: Redirect to authorization page
@@ -464,7 +465,8 @@ var (
             TokenURL: "https://provider.com/oauth/token",
         },
     }
-    // Store state in production use secure storage like Redis or database
+    // In production, store state in secure storage like Redis or database
+    // Implement expiration to prevent memory leaks
     stateStore = make(map[string]int64)
 )
 

@@ -377,6 +377,7 @@ const config = {
 // 存储 state（生产环境应使用数据库或 Redis，用于分布式系统）
 // 内存存储仅适用于单服务器开发环境
 // 对于有多个服务器实例的生产环境，使用 Redis 或分布式缓存
+// 注意：实现状态过期/清理机制以防止内存泄漏
 const stateStore = new Map();
 
 // 步骤 1: 重定向到授权页面
@@ -464,7 +465,8 @@ var (
             TokenURL: "https://provider.com/oauth/token",
         },
     }
-    // 生产环境应使用 Redis 或数据库等安全存储
+    // 生产环境中应使用 Redis 或数据库等安全存储
+    // 实现过期机制以防止内存泄漏
     stateStore = make(map[string]int64)
 )
 
