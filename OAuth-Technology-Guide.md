@@ -374,7 +374,9 @@ const config = {
     scope: 'read write'
 };
 
-// Store state (production should use database or Redis)
+// Store state (production should use database or Redis for distributed systems)
+// In-memory storage is only suitable for single-server development environments
+// For production with multiple server instances, use Redis or a distributed cache
 const stateStore = new Map();
 
 // Step 1: Redirect to authorization page
@@ -442,10 +444,13 @@ package main
 
 import (
     "context"
+    "crypto/rand"
+    "encoding/base64"
     "fmt"
     "golang.org/x/oauth2"
     "log"
     "net/http"
+    "time"
 )
 
 var (
@@ -459,7 +464,8 @@ var (
             TokenURL: "https://provider.com/oauth/token",
         },
     }
-    oauthStateString = "random_state_string"
+    // Store state in production use secure storage like Redis or database
+    stateStore = make(map[string]int64)
 )
 
 func main() {
@@ -471,16 +477,27 @@ func main() {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-    url := oauthConfig.AuthCodeURL(oauthStateString)
+    // Generate cryptographically secure random state
+    b := make([]byte, 16)
+    rand.Read(b)
+    state := base64.URLEncoding.EncodeToString(b)
+    
+    // Store state (use Redis/database in production for distributed systems)
+    stateStore[state] = time.Now().Unix()
+    
+    url := oauthConfig.AuthCodeURL(state)
     http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func handleCallback(w http.ResponseWriter, r *http.Request) {
     state := r.FormValue("state")
-    if state != oauthStateString {
+    
+    // Validate state
+    if _, exists := stateStore[state]; !exists {
         http.Error(w, "Invalid state parameter", http.StatusBadRequest)
         return
     }
+    delete(stateStore, state)
     
     code := r.FormValue("code")
     token, err := oauthConfig.Exchange(context.Background(), code)

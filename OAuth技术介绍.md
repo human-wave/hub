@@ -374,7 +374,9 @@ const config = {
     scope: 'read write'
 };
 
-// 存储 state（生产环境应使用数据库或 Redis）
+// 存储 state（生产环境应使用数据库或 Redis，用于分布式系统）
+// 内存存储仅适用于单服务器开发环境
+// 对于有多个服务器实例的生产环境，使用 Redis 或分布式缓存
 const stateStore = new Map();
 
 // 步骤 1: 重定向到授权页面
@@ -442,10 +444,13 @@ package main
 
 import (
     "context"
+    "crypto/rand"
+    "encoding/base64"
     "fmt"
     "golang.org/x/oauth2"
     "log"
     "net/http"
+    "time"
 )
 
 var (
@@ -459,7 +464,8 @@ var (
             TokenURL: "https://provider.com/oauth/token",
         },
     }
-    oauthStateString = "random_state_string"
+    // 生产环境应使用 Redis 或数据库等安全存储
+    stateStore = make(map[string]int64)
 )
 
 func main() {
@@ -471,16 +477,27 @@ func main() {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-    url := oauthConfig.AuthCodeURL(oauthStateString)
+    // 生成加密安全的随机 state
+    b := make([]byte, 16)
+    rand.Read(b)
+    state := base64.URLEncoding.EncodeToString(b)
+    
+    // 存储 state（生产环境中分布式系统应使用 Redis/数据库）
+    stateStore[state] = time.Now().Unix()
+    
+    url := oauthConfig.AuthCodeURL(state)
     http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func handleCallback(w http.ResponseWriter, r *http.Request) {
     state := r.FormValue("state")
-    if state != oauthStateString {
+    
+    // 验证 state
+    if _, exists := stateStore[state]; !exists {
         http.Error(w, "Invalid state parameter", http.StatusBadRequest)
         return
     }
+    delete(stateStore, state)
     
     code := r.FormValue("code")
     token, err := oauthConfig.Exchange(context.Background(), code)
